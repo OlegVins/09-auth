@@ -20,10 +20,14 @@ export const refreshSession = async (refreshToken: string) => {
     return data;
 };
 
-export const getCurrentUser = async (): Promise<User> => {
+export const getCurrentUser = async (): Promise<User | null> => {
+    try {
     const serverApi = await getServerApi();
-    const { data } = await serverApi.get<User>('/auth/me');
-    return data;
+    const { data } = await serverApi.get<User>('/users/me');
+        return data;
+    } catch {
+        return null;
+    }
 };
 
 export const getNoteById = async (id: string): Promise<Note> => {
@@ -33,19 +37,12 @@ export const getNoteById = async (id: string): Promise<Note> => {
 };
 
 export const checkSession = async (): Promise<boolean> => {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const refreshToken = cookieStore.get('refreshToken')?.value;
+    try {
+        const serverApi = await getServerApi();
+        const res = await serverApi.get('/auth/session');
 
-    if (accessToken) return true;
-
-    if (refreshToken) {
-        try {
-            await refreshSession(refreshToken);
-            return true;
-        } catch  {
-            return false;
-        }
+        return !!res.data;
+    } catch {
+        return false;
     }
-    return false;
 };
