@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from 'next/image';
 import { useAuthStore } from "@/lib/store/authStore";
-import { updateMe, getMe } from "@/lib/api/clientApi";
+import { updateMe, getCurrentUser } from "@/lib/api/clientApi";
 import css from './EditProfilePage.module.css';
 
 export default function EditProfilePage() {
@@ -15,7 +15,7 @@ export default function EditProfilePage() {
 
     useEffect(() => {
         if (!user) {
-            getMe().then((data) => {
+            getCurrentUser().then((data) => {
                 setUser(data);
                 setUsername(data.username);
             });

@@ -1,4 +1,6 @@
-import { useEffect } from "react";
+'use client';
+
+import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function AuthLayout({
@@ -12,5 +14,9 @@ export default function AuthLayout({
         router.refresh();
     }, [router]);
     
-    return <>{children}</>;
+    return (
+        <>
+            {children}
+        </>
+    );
 }
