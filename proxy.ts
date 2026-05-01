@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { checkSession } from './lib/api/serverApi';
 
 
-export default async function proxy(req: NextRequest) {
+export async function proxy(req: NextRequest) {
     const pathname = req.nextUrl.pathname;
 
     const isAuthRoute = pathname.startsWith('/sign-in') ||
@@ -11,7 +11,15 @@ export default async function proxy(req: NextRequest) {
 
     const isPrivateRoute = pathname.startsWith('/notes') ||
         pathname.startsWith('/profile');
-    const isAuthenticated = await checkSession();
+    
+    let isAuthenticated = false;
+
+    try {
+        const response = await checkSession();
+        isAuthenticated = !!response.data;
+    } catch {
+        isAuthenticated = false;
+    }
 
 
     if (!isAuthenticated && isPrivateRoute) {

@@ -20,7 +20,7 @@ export default function NoteForm() {
                 queryKey: ['notes'],
             });
             clearDraft();
-            router.push('notes');
+            router.push('/notes');
         },
 
         onError: (error) => {

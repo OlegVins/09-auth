@@ -2,28 +2,22 @@ import { cookies } from "next/headers";
 import { api } from './api';
 import { User } from '../../types/user';
 import { Note } from '../../types/note';
-import { AxiosInstance } from "axios";
+import { AxiosResponse } from "axios";
 
-export const getServerApi = async (): Promise<AxiosInstance> => {
+export const getServerApi = async () => {
     const cookieStore = await cookies();
-    api.defaults.headers.common['Cookie'] = cookieStore.toString();
-    return api;
-};
+    const cookieHeader = cookieStore
+        .getAll()
+        .map(c => `${c.name}=${c.value}`)
+        .join('; ');
 
-export const refreshSession = async (refreshToken: string) => {
-    const serverApi = await getServerApi();
-    const { data } = await serverApi.post('/auth/refresh', {}, {
-        headers: {
-            Cookie: `refreshToken=${refreshToken}`,
-        }
-    });
-    return data;
-};
+    return { Cookie: cookieHeader };      
+    };
 
 export const getCurrentUser = async (): Promise<User | null> => {
     try {
-    const serverApi = await getServerApi();
-    const { data } = await serverApi.get<User>('/users/me');
+    const headers = await getServerApi();
+    const { data } = await api.get<User>('/users/me', { headers });
         return data;
     } catch {
         return null;
@@ -31,18 +25,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 export const getNoteById = async (id: string): Promise<Note> => {
-    const serverApi = await getServerApi();
-    const { data } = await serverApi.get<Note>(`/notes/${id}`);
+    const headers = await getServerApi();
+    const { data } = await api.get<Note>(`/notes/${id}`, { headers });
     return data;
 };
 
-export const checkSession = async (): Promise<boolean> => {
-    try {
-        const serverApi = await getServerApi();
-        const res = await serverApi.get('/auth/session');
-
-        return !!res.data;
-    } catch {
-        return false;
-    }
+export const checkSession = async (): Promise<AxiosResponse> => {
+        const headers = await getServerApi();
+        return await api.get('/auth/session', { headers });
 };
