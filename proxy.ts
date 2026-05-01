@@ -18,48 +18,45 @@ export async function proxy(req: NextRequest) {
         pathname.startsWith('/profile');
     
     let isAuthenticated = !!accessToken;
-    const response = NextResponse.next();
-
-    const applyCookies = (target: NextResponse) => {
-        response.cookies.getAll().forEach((cookie) => {
-            target.cookies.set(cookie.name, cookie.value, {
-                httpOnly: true,
-                secure: true,
-                sameSite: 'lax',
-            });
-        });
-        return target;
-    };
+    let newTokens: { accessToken: string; refreshToken?: string } | null = null;
 
     if (!accessToken && refreshToken) {
         try {
             const authResponse = await checkSession();
             if (authResponse.status === 200 && authResponse.data) {
                 isAuthenticated = true;
-
-                const newAccessToken = authResponse.data.accessToken;
-                if (newAccessToken) {
-                    response.cookies.set('accessToken', newAccessToken, { httpOnly: true });
-                }
-                const newRefreshToken = authResponse.data.refreshToken;
-                if (newRefreshToken) {
-                    response.cookies.set('refreshToken', newRefreshToken, { httpOnly: true });
-                }
+                newTokens = authResponse.data;
             }
         } catch {
             isAuthenticated = false;
         }
     }
 
+    let response: NextResponse;
+
     if (!isAuthenticated && isPrivateRoute) {
-        const redirectResponse = NextResponse.redirect(new URL('/sign-in', req.url));
-            return applyCookies(redirectResponse);
+        response = NextResponse.redirect(new URL('/sign-in', req.url));
+    } else if (isAuthenticated && isAuthRoute) {
+        response = NextResponse.redirect(new URL('/', req.url));
+    } else {
+        response = NextResponse.next();
     }
+    
 
-    if (isAuthenticated && isAuthRoute) {
-        const redirectResponse = NextResponse.redirect(new URL('/', req.url));
-        return applyCookies(redirectResponse);
+    if (newTokens) {
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax' as const,
+            path: '/',
+        };
+
+        if (newTokens.accessToken) {
+            response.cookies.set('accessToken', newTokens.accessToken, cookieOptions);
+        }
+        if (newTokens.refreshToken) {
+            response.cookies.set('refreshToken', newTokens.refreshToken, cookieOptions);
+        }
     }
-
     return response;
 }
