@@ -28,6 +28,10 @@ export async function proxy(req: NextRequest) {
                 if (newAccessToken) {
                     response.cookies.set('accessToken', newAccessToken, { httpOnly: true });
                 }
+                const newRefreshToken = authResponse.data.refreshToken;
+                if (newRefreshToken) {
+                    response.cookies.set('refreshToken', newRefreshToken, { httpOnly: true });
+                }
             }
         } catch {
             isAuthenticated = false;
@@ -42,5 +46,5 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(new URL('/', req.url));
     }
 
-    return NextResponse.next()
+    return response;
 }
