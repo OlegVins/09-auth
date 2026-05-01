@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { checkSession } from "@/lib/api/clientApi";
+import { checkSession, getCurrentUser } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 
 export default function AuthProvider({
@@ -19,24 +19,28 @@ export default function AuthProvider({
     useEffect(() => {
         async function verify() {
             try {
-                const user = await checkSession();
+                const isAuthenticated = await checkSession();
 
-                if (user) {
+                if (isAuthenticated) {
+                    const user = await getCurrentUser();
                     setUser(user);
                 } else {
-                    clearIsAuthenticated();
-
-                    if (pathname.startsWith('/notes') || pathname.startsWith('/profile')) {
-                        router.push('/sign-in');
-                    }
+                    handleAuthFailure();
                 }
-            } catch {
-                clearIsAuthenticated();
-                router.push('/sign-in');
+                } catch {
+                handleAuthFailure();
             } finally {
                 setIsLoading(false);
             }
         }
+
+        function handleAuthFailure() {
+            clearIsAuthenticated();
+            if (pathname.startsWith('/notes') || pathname.startsWith('/profile')) {
+                        router.push('/sign-in');
+                    }
+                }
+         
                 verify();
     }, [pathname, router, setUser, clearIsAuthenticated]);
     

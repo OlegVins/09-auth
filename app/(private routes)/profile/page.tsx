@@ -1,19 +1,24 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Link from 'next/link';
-import { useAuthStore } from '@/lib/store/authStore';
+import { getServerApi } from '@/lib/api/serverApi';
 import css from './ProfilePage.module.css';
 import Image from 'next/image';
 
-export default function ProfilePage() {
-    const user = useAuthStore((s) => s.user);
+export const metadata: Metadata = {
+    title: 'Profile',
+    description: 'User profile page',
+};
+
+export default async function ProfilePage() {
+    const api = await getServerApi();
+    const { data: user } = await api.get('/users/me');
 
     return (
         <main className={css.mainContent}>
             <div className={css.profileCard}>
                 <div className={css.header}>
                     <h1 className={css.formTitle}>Profile Page</h1>
-                    <Link href="" className={css.editProfileButton}>
+                    <Link href="/profile/edit" className={css.editProfileButton}>
                         Edit Profile
                     </Link>
                 </div>

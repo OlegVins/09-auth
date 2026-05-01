@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useNoteStore } from '@/lib/store/noteStore';
 import css from './NoteForm.module.css';
 import { createNote } from '@/lib/api/clientApi';
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { NoteTag } from '@/types/note';
 
 
@@ -12,26 +12,33 @@ export default function NoteForm() {
     const queryClient = useQueryClient();
     const { draft, setDraft, clearDraft } = useNoteStore();
 
-    async function handleSubmit(formData: FormData) {
-        const newNote = {
-            title: String(formData.get('title')),
-            content: String(formData.get('content')),
-            tag: formData.get('tag') as NoteTag,
-        };
+    const { mutate, isPending } = useMutation({
+        mutationFn: createNote,
 
-        await createNote(newNote);
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ['notes'],
+            });
+            clearDraft();
+            router.push('notes');
+        },
 
-        queryClient.invalidateQueries({
-            queryKey: ['notes'],
-            exact: false,
+        onError: (error) => {
+            console.error('Create note error:', error);
+        },
+    });
+
+    const handleSubmit = (e: React.SyntheticEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        mutate({
+            title: draft.title,
+            content: draft.content,
+            tag: draft.tag as NoteTag,
         });
-
-        clearDraft();
-        router.push('/notes');
-    }
+    };
 
     return (
-        <form action={handleSubmit}
+        <form onSubmit={handleSubmit}
             className={css.form}>
             <div className={css.formGroup}>
                 <label htmlFor="title">Title</label>
@@ -92,8 +99,9 @@ export default function NoteForm() {
                 <button
                     type="submit"
                     className={css.submitButton}
+                    disabled={isPending}
                 >
-                    Create note
+                    {isPending ? 'Creating ...' : 'Create note'}
                 </button>
             </div>
         </form>
