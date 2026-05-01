@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { api } from '@/lib/api/api';
 import { getServerApi } from '@/lib/api/serverApi';
 import css from './ProfilePage.module.css';
 import Image from 'next/image';
@@ -10,8 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-    const api = await getServerApi();
-    const { data: user } = await api.get('/users/me');
+    const config = await getServerApi();
+    const { data: user } = await api.get('/users/me', {headers: config });
 
     return (
         <main className={css.mainContent}>

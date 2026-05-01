@@ -11,8 +11,8 @@ export const getServerApi = async () => {
         .map(c => `${c.name}=${c.value}`)
         .join('; ');
 
-    return { Cookie: cookieHeader };      
-    };
+    return { Cookie: cookieHeader };
+  };
 
 export const getCurrentUser = async (): Promise<User | null> => {
     try {
