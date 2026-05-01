@@ -20,6 +20,17 @@ export async function proxy(req: NextRequest) {
     let isAuthenticated = !!accessToken;
     const response = NextResponse.next();
 
+    const applyCookies = (target: NextResponse) => {
+        response.cookies.getAll().forEach((cookie) => {
+            target.cookies.set(cookie.name, cookie.value, {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'lax',
+            });
+        });
+        return target;
+    };
+
     if (!accessToken && refreshToken) {
         try {
             const authResponse = await checkSession();
@@ -42,18 +53,12 @@ export async function proxy(req: NextRequest) {
 
     if (!isAuthenticated && isPrivateRoute) {
         const redirectResponse = NextResponse.redirect(new URL('/sign-in', req.url));
-        response.cookies.getAll().forEach((cookie) => {
-            redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
-        });
-        return redirectResponse;
+            return applyCookies(redirectResponse);
     }
 
     if (isAuthenticated && isAuthRoute) {
         const redirectResponse = NextResponse.redirect(new URL('/', req.url));
-         response.cookies.getAll().forEach((cookie) => {
-            redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
-        });
-        return redirectResponse;
+        return applyCookies(redirectResponse);
     }
 
     return response;
